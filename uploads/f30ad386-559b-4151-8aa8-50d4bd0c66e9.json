@@ -1,0 +1,14 @@
+{
+"score": 34,
+"total_errors": 8,
+"errors": [
+{"line":"16","type":"Division by Zero","risk":"High","message":"Division by zero may crash the program.","solution":"Check denominator before division."},
+{"line":"24","type":"Possible Infinite Loop","risk":"Medium","message":"Loop may run forever without a stopping condition.","solution":"Add break condition or valid loop condition."},
+{"line":"5","type":"Uninitialized Pointer","risk":"High","message":"Pointer is declared but not initialized.","solution":"Initialize pointer with nullptr or allocate memory."},
+{"line":"9","type":"Memory Leak","risk":"High","message":"Memory is allocated using new but not released.","solution":"Use delete or delete[] to free memory."},
+{"line":"18","type":"Uninitialized Pointer","risk":"High","message":"Pointer is declared but not initialized.","solution":"Initialize pointer with nullptr or allocate memory."},
+{"line":"21","type":"Array Out of Bounds","risk":"High","message":"Array index exceeds declared array size.","solution":"Use index within valid array range."},
+{"line":"22","type":"Array Out of Bounds","risk":"High","message":"Array index exceeds declared array size.","solution":"Use index within valid array range."},
+{"line":"-","type":"Missing Destructor","risk":"Medium","message":"Dynamic memory is used but destructor is missing.","solution":"Add destructor to release memory."}
+]
+}

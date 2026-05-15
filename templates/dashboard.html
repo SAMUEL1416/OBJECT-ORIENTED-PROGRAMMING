@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard - CodeGuard AI</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="nav">
+    <span>Logged in as: {{ email }}</span>
+    <a href="/index">Analyze</a>
+    <a href="/history">History</a>
+    <a href="/logout">Logout</a>
+</div>
+
+<div class="container">
+    <h1>Code Analysis Dashboard</h1>
+
+    <div class="score-card">
+        <h2>Runtime Safety Score: {{ result.score }}/100</h2>
+        <h3>Total Issues Found: {{ result.total_errors }}</h3>
+    </div>
+
+    <h2>Uploaded C++ Code</h2>
+    <pre>{{ code }}</pre>
+
+    <h2>Analysis Result</h2>
+
+    {% for error in result.errors %}
+    <div class="error-card">
+        <h3>{{ error.type }}</h3>
+        <p><b>Line:</b> {{ error.line }}</p>
+        <p><b>Risk:</b> {{ error.risk }}</p>
+        <p><b>Issue:</b> {{ error.message }}</p>
+        <p><b>Solution:</b> {{ error.solution }}</p>
+    </div>
+    {% endfor %}
+
+    <a href="/index">Analyze Another Code</a>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CodeGuard AI</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="nav">
+    <span>Logged in as: {{ email }}</span>
+    <a href="/history">History</a>
+    <a href="/logout">Logout</a>
+</div>
+
+<div class="container">
+    <h1>CodeGuard AI</h1>
+    <h2>Intelligent Runtime Error Prediction System</h2>
+
+    <p>
+        Paste your C++ code below. The system will analyze runtime errors,
+        memory leaks, pointer issues, OOP design problems, and exception handling.
+    </p>
+
+    {% if error %}
+    <div class="error">{{ error }}</div>
+    {% endif %}
+
+    <form action="/analyze" method="POST">
+        <textarea name="code" placeholder="Paste C++ code here..." required></textarea>
+        <button type="submit">Analyze Code</button>
+    </form>
+</div>
+
+</body>
+</html>

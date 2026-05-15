@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Signup - CodeGuard AI</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="container small">
+    <h1>Create Account</h1>
+    <h2>CodeGuard AI</h2>
+
+    {% if error %}
+    <div class="error">{{ error }}</div>
+    {% endif %}
+
+    <form action="/signup" method="POST">
+        <input type="email" name="email" placeholder="Enter Gmail ID" required>
+        <input type="password" name="password" placeholder="Create Password" required>
+        <input type="password" name="confirm_password" placeholder="Confirm Password" required>
+        <button type="submit">Create Account</button>
+    </form>
+
+    <p>Already have account?</p>
+    <a href="/login">Login</a>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>History - CodeGuard AI</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="nav">
+    <span>Logged in as: {{ email }}</span>
+    <a href="/index">Analyze</a>
+    <a href="/logout">Logout</a>
+</div>
+
+<div class="container">
+    <h1>Analysis History</h1>
+
+    {% if records|length == 0 %}
+    <p>No history found.</p>
+    {% endif %}
+
+    {% for record in records %}
+    <div class="history-card">
+        <h3>Analysis ID: {{ record[0] }}</h3>
+        <p><b>Date:</b> {{ record[4] }}</p>
+        <p><b>Runtime Safety Score:</b> {{ record[2] }}/100</p>
+        <p><b>Total Issues:</b> {{ record[3] }}</p>
+
+        <h4>Code:</h4>
+        <pre>{{ record[1] }}</pre>
+    </div>
+    {% endfor %}
+</div>
+
+</body>
+</html>

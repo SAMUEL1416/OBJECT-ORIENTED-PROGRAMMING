@@ -1,0 +1,11 @@
+{
+"score": 15,
+"total_errors": 5,
+"errors": [
+{"line":"8","type":"Division by Zero","risk":"High","message":"The program may crash because division by zero is detected.","solution":"Check denominator before division."},
+{"line":"16","type":"Possible Infinite Loop","risk":"Medium","message":"Loop may run continuously without a stopping condition.","solution":"Add a valid condition or break statement."},
+{"line":"10","type":"Uninitialized Pointer","risk":"High","message":"Pointer is declared but not initialized.","solution":"Initialize pointer with nullptr or allocate memory."},
+{"line":"13","type":"Array Out of Bounds","risk":"High","message":"Array index exceeds declared array size.","solution":"Use index within valid array range."},
+{"line":"14","type":"Array Out of Bounds","risk":"High","message":"Array index exceeds declared array size.","solution":"Use index within valid array range."}
+]
+}
