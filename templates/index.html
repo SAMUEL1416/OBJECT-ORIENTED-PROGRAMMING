@@ -7,29 +7,58 @@
 </head>
 <body>
 
-<div class="nav">
-    <span>Logged in as: {{ email }}</span>
-    <a href="/history">History</a>
-    <a href="/logout">Logout</a>
-</div>
+<div class="layout">
 
-<div class="container">
-    <h1>CodeGuard AI</h1>
-    <h2>Intelligent Runtime Error Prediction System</h2>
+    <aside class="sidebar">
+        <h1>🛡 CodeGuard AI</h1>
+        <a href="/index">Analyze Code</a>
+        <a href="/history">History</a>
+        <a href="/logout">Logout</a>
 
-    <p>
-        Paste your C++ code below. The system will analyze runtime errors,
-        memory leaks, pointer issues, OOP design problems, and exception handling.
-    </p>
+        <div class="sidebar-footer">
+            <b>Logged in as:</b>
+            <p>{{ email }}</p>
+        </div>
+    </aside>
 
-    {% if error %}
-    <div class="error">{{ error }}</div>
-    {% endif %}
+    <main class="main-content">
 
-    <form action="/analyze" method="POST">
-        <textarea name="code" placeholder="Paste C++ code here..." required></textarea>
-        <button type="submit">Analyze Code</button>
-    </form>
+        <div class="hero-card">
+            <h1>CodeGuard AI</h1>
+            <h2>Intelligent Runtime Error Prediction System</h2>
+            <p>
+                Paste your C++ code below. The system will analyze runtime errors,
+                memory leaks, pointer issues, OOP design problems, and exception handling.
+            </p>
+        </div>
+
+        {% if error %}
+        <div class="error">{{ error }}</div>
+        {% endif %}
+
+        <section class="panel">
+            <h2>Upload / Paste C++ Code</h2>
+
+            <form action="/analyze" method="POST">
+                <textarea name="code" placeholder="Paste your C++ code here..." required></textarea>
+                <button type="submit">Analyze Code</button>
+            </form>
+        </section>
+
+        <section class="panel info-panel">
+            <h2>What this system checks</h2>
+            <div class="feature-grid">
+                <div>Array out of bounds</div>
+                <div>Division by zero</div>
+                <div>Pointer issues</div>
+                <div>Memory leaks</div>
+                <div>Missing destructor</div>
+                <div>Exception handling</div>
+            </div>
+        </section>
+
+    </main>
+
 </div>
 
 </body>

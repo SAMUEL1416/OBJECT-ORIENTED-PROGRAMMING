@@ -3,6 +3,7 @@
 #include <vector>
 #include <regex>
 #include <string>
+#include <map>
 using namespace std;
 
 class ErrorReport {
@@ -21,45 +22,91 @@ public:
 
 class Analyzer {
 public:
-    virtual void analyze(vector<string>& lines, vector<ErrorReport>& reports, int& score) = 0;
+    virtual void analyze(vector<string>& lines, vector<ErrorReport>& reports) = 0;
     virtual ~Analyzer() {}
 };
 
 class RuntimeAnalyzer : public Analyzer {
 public:
-    bool containsTry(vector<string>& lines) {
-        for (string line : lines) {
-            if (line.find("try") != string::npos)
-                return true;
-        }
-        return false;
-    }
+    void analyze(vector<string>& lines, vector<ErrorReport>& reports) override {
+        map<string, int> zeroVariables;
 
-    void analyze(vector<string>& lines, vector<ErrorReport>& reports, int& score) override {
         for (int i = 0; i < lines.size(); i++) {
             string line = lines[i];
 
+            smatch zeroMatch;
+            regex zeroPattern("int\\s+(\\w+)\\s*=\\s*0\\s*;");
+            if (regex_search(line, zeroMatch, zeroPattern)) {
+                zeroVariables[zeroMatch[1]] = i + 1;
+            }
+
             if (regex_search(line, regex("/\\s*0"))) {
-                reports.push_back(ErrorReport(i + 1, "Division by Zero", "High",
-                    "Division by zero may crash the program.",
-                    "Check denominator before division."));
-                score -= 10;
+                reports.push_back(ErrorReport(
+                    i + 1,
+                    "Division by Zero",
+                    "High",
+                    "The code directly divides a value by zero.",
+                    "Check denominator before division."
+                ));
+            }
+
+            for (auto const& item : zeroVariables) {
+                string var = item.first;
+                regex divVarPattern("/\\s*" + var + "\\b");
+
+                if (regex_search(line, divVarPattern)) {
+                    reports.push_back(ErrorReport(
+                        i + 1,
+                        "Division by Zero",
+                        "High",
+                        "Variable '" + var + "' is zero and used as divisor.",
+                        "Check if divisor is not zero before division."
+                    ));
+                }
             }
 
             string noSpace = regex_replace(line, regex("\\s+"), "");
 
             if (noSpace.find("while(true)") != string::npos || noSpace.find("while(1)") != string::npos) {
-                reports.push_back(ErrorReport(i + 1, "Possible Infinite Loop", "Medium",
-                    "Loop may run forever without a stopping condition.",
-                    "Add break condition or valid loop condition."));
-                score -= 5;
+                bool hasBreak = false;
+
+                for (int j = i; j < lines.size(); j++) {
+                    if (lines[j].find("break") != string::npos) {
+                        hasBreak = true;
+                        break;
+                    }
+                }
+
+                if (!hasBreak) {
+                    reports.push_back(ErrorReport(
+                        i + 1,
+                        "Possible Infinite Loop",
+                        "Medium",
+                        "Loop may run forever without a stopping condition.",
+                        "Add a valid break condition."
+                    ));
+                }
             }
 
-            if (line.find("cin") != string::npos && !containsTry(lines)) {
-                reports.push_back(ErrorReport(i + 1, "Missing Exception Handling", "Low",
-                    "Input operation found without exception handling.",
-                    "Use try-catch for safer input handling."));
-                score -= 2;
+            if (line.find("cin") != string::npos) {
+                bool hasTry = false;
+
+                for (string l : lines) {
+                    if (l.find("try") != string::npos) {
+                        hasTry = true;
+                        break;
+                    }
+                }
+
+                if (!hasTry) {
+                    reports.push_back(ErrorReport(
+                        i + 1,
+                        "Missing Exception Handling",
+                        "Low",
+                        "Input operation found without exception handling.",
+                        "Use try-catch for safer input handling."
+                    ));
+                }
             }
         }
     }
@@ -67,30 +114,57 @@ public:
 
 class PointerAnalyzer : public Analyzer {
 public:
-    bool containsDelete(vector<string>& lines) {
-        for (string line : lines) {
-            if (line.find("delete") != string::npos)
-                return true;
-        }
-        return false;
-    }
+    void analyze(vector<string>& lines, vector<ErrorReport>& reports) override {
+        vector<pair<string, int>> uninitializedPointers;
+        bool hasDelete = false;
 
-    void analyze(vector<string>& lines, vector<ErrorReport>& reports, int& score) override {
         for (int i = 0; i < lines.size(); i++) {
             string line = lines[i];
 
-            if (regex_search(line, regex("\\w+\\s*\\*\\s*\\w+\\s*;"))) {
-                reports.push_back(ErrorReport(i + 1, "Uninitialized Pointer", "High",
-                    "Pointer is declared but not initialized.",
-                    "Initialize pointer with nullptr or allocate memory."));
-                score -= 8;
+            if (line.find("delete") != string::npos) {
+                hasDelete = true;
             }
 
-            if (line.find("new ") != string::npos && !containsDelete(lines)) {
-                reports.push_back(ErrorReport(i + 1, "Memory Leak", "High",
+            smatch ptrMatch;
+            regex ptrDeclPattern("\\b(int|float|double|char|string)\\s*\\*\\s*(\\w+)\\s*;");
+
+            if (regex_search(line, ptrMatch, ptrDeclPattern)) {
+                string pointerName = ptrMatch[2];
+                uninitializedPointers.push_back({pointerName, i + 1});
+            }
+        }
+
+        for (auto p : uninitializedPointers) {
+            string pointerName = p.first;
+
+            for (int i = 0; i < lines.size(); i++) {
+                string line = lines[i];
+
+                regex dereferencePattern("\\*" + pointerName + "\\b");
+
+                if (regex_search(line, dereferencePattern) && line.find("*" + pointerName + ";") == string::npos) {
+                    reports.push_back(ErrorReport(
+                        i + 1,
+                        "Uninitialized Pointer",
+                        "High",
+                        "Pointer '" + pointerName + "' is dereferenced without initialization.",
+                        "Initialize pointer before dereferencing."
+                    ));
+                }
+            }
+        }
+
+        for (int i = 0; i < lines.size(); i++) {
+            string line = lines[i];
+
+            if (line.find("new ") != string::npos && !hasDelete) {
+                reports.push_back(ErrorReport(
+                    i + 1,
+                    "Memory Leak",
+                    "High",
                     "Memory is allocated using new but not released.",
-                    "Use delete or delete[] to free memory."));
-                score -= 10;
+                    "Use delete or delete[] to release memory."
+                ));
             }
         }
     }
@@ -98,32 +172,47 @@ public:
 
 class ArrayAnalyzer : public Analyzer {
 public:
-    void analyze(vector<string>& lines, vector<ErrorReport>& reports, int& score) override {
-        regex arrayPattern("int\\s+(\\w+)\\[(\\d+)\\]");
+    void analyze(vector<string>& lines, vector<ErrorReport>& reports) override {
+        map<string, int> arrays;
+
+        regex arrayDeclPattern("\\b(int|float|double|char|string)\\s+(\\w+)\\[(\\d+)\\]");
         smatch match;
 
         for (int i = 0; i < lines.size(); i++) {
             string line = lines[i];
 
-            if (regex_search(line, match, arrayPattern)) {
-                string arrayName = match[1];
-                int size = stoi(match[2]);
+            if (regex_search(line, match, arrayDeclPattern)) {
+                string arrayName = match[2];
+                int size = stoi(match[3]);
+                arrays[arrayName] = size;
+            }
+        }
+
+        for (int i = 0; i < lines.size(); i++) {
+            string line = lines[i];
+
+            if (regex_search(line, arrayDeclPattern)) {
+                continue;
+            }
+
+            for (auto const& item : arrays) {
+                string arrayName = item.first;
+                int size = item.second;
 
                 regex accessPattern(arrayName + "\\[(\\d+)\\]");
                 smatch accessMatch;
 
-                for (int j = 0; j < lines.size(); j++) {
-                    string accessLine = lines[j];
+                if (regex_search(line, accessMatch, accessPattern)) {
+                    int index = stoi(accessMatch[1]);
 
-                    if (regex_search(accessLine, accessMatch, accessPattern)) {
-                        int index = stoi(accessMatch[1]);
-
-                        if (index >= size) {
-                            reports.push_back(ErrorReport(j + 1, "Array Out of Bounds", "High",
-                                "Array index exceeds declared array size.",
-                                "Use index within valid array range."));
-                            score -= 10;
-                        }
+                    if (index >= size) {
+                        reports.push_back(ErrorReport(
+                            i + 1,
+                            "Array Out of Bounds",
+                            "High",
+                            "Array index exceeds declared array size.",
+                            "Use index within valid array range."
+                        ));
                     }
                 }
             }
@@ -133,57 +222,76 @@ public:
 
 class OOPAnalyzer : public Analyzer {
 public:
-    void analyze(vector<string>& lines, vector<ErrorReport>& reports, int& score) override {
+    void analyze(vector<string>& lines, vector<ErrorReport>& reports) override {
         bool hasClass = false;
         bool hasAccessSpecifier = false;
         bool hasInheritance = false;
         bool hasVirtual = false;
         bool hasNew = false;
         bool hasDestructor = false;
+        int classLine = 0;
 
-        for (string line : lines) {
-            if (line.find("class ") != string::npos)
+        for (int i = 0; i < lines.size(); i++) {
+            string line = lines[i];
+
+            if (line.find("class ") != string::npos) {
                 hasClass = true;
+                classLine = i + 1;
+            }
 
             if (line.find("public:") != string::npos ||
                 line.find("private:") != string::npos ||
-                line.find("protected:") != string::npos)
+                line.find("protected:") != string::npos) {
                 hasAccessSpecifier = true;
+            }
 
             if (line.find(": public") != string::npos ||
                 line.find(": private") != string::npos ||
-                line.find(": protected") != string::npos)
+                line.find(": protected") != string::npos) {
                 hasInheritance = true;
+            }
 
-            if (line.find("virtual") != string::npos)
+            if (line.find("virtual") != string::npos) {
                 hasVirtual = true;
+            }
 
-            if (line.find("new ") != string::npos)
+            if (line.find("new ") != string::npos) {
                 hasNew = true;
+            }
 
-            if (line.find("~") != string::npos)
+            if (line.find("~") != string::npos) {
                 hasDestructor = true;
+            }
         }
 
         if (hasClass && !hasAccessSpecifier) {
-            reports.push_back(ErrorReport(0, "Poor OOP Design", "Medium",
+            reports.push_back(ErrorReport(
+                classLine,
+                "Poor OOP Design",
+                "Medium",
                 "Class is used without access specifiers.",
-                "Use public, private, or protected sections."));
-            score -= 5;
+                "Use public, private, or protected sections."
+            ));
         }
 
         if (hasNew && !hasDestructor) {
-            reports.push_back(ErrorReport(0, "Missing Destructor", "Medium",
+            reports.push_back(ErrorReport(
+                classLine,
+                "Missing Destructor",
+                "Medium",
                 "Dynamic memory is used but destructor is missing.",
-                "Add destructor to release memory."));
-            score -= 5;
+                "Add destructor to release allocated memory."
+            ));
         }
 
         if (hasInheritance && !hasVirtual) {
-            reports.push_back(ErrorReport(0, "Polymorphism Warning", "Low",
-                "Inheritance is used but no virtual function is found.",
-                "Use virtual functions for runtime polymorphism."));
-            score -= 2;
+            reports.push_back(ErrorReport(
+                classLine,
+                "Polymorphism Warning",
+                "Low",
+                "Inheritance is used without virtual function.",
+                "Use virtual functions for runtime polymorphism."
+            ));
         }
     }
 };
@@ -192,11 +300,9 @@ class CodeGuardSystem {
 private:
     vector<Analyzer*> analyzers;
     vector<ErrorReport> reports;
-    int score;
 
 public:
     CodeGuardSystem() {
-        score = 100;
         analyzers.push_back(new RuntimeAnalyzer());
         analyzers.push_back(new PointerAnalyzer());
         analyzers.push_back(new ArrayAnalyzer());
@@ -204,8 +310,9 @@ public:
     }
 
     ~CodeGuardSystem() {
-        for (Analyzer* a : analyzers)
+        for (Analyzer* a : analyzers) {
             delete a;
+        }
     }
 
     vector<string> readFile(string fileName) {
@@ -224,16 +331,7 @@ public:
         vector<string> lines = readFile(inputFile);
 
         for (Analyzer* analyzer : analyzers) {
-            analyzer->analyze(lines, reports, score);
-        }
-
-        if (reports.empty()) {
-            score = 100;
-        } else {
-            if (score < 10)
-                score = 10;
-            if (score > 100)
-                score = 100;
+            analyzer->analyze(lines, reports);
         }
 
         generateReport(outputFile);
@@ -243,13 +341,6 @@ public:
         ofstream out(outputFile);
 
         out << "{\n";
-        out << "\"score\": " << score << ",\n";
-
-        if (reports.empty())
-            out << "\"total_errors\": 0,\n";
-        else
-            out << "\"total_errors\": " << reports.size() << ",\n";
-
         out << "\"errors\": [\n";
 
         if (reports.empty()) {
@@ -257,21 +348,23 @@ public:
             out << "\"line\":\"-\",";
             out << "\"type\":\"No Major Issue Found\",";
             out << "\"risk\":\"Safe\",";
-            out << "\"message\":\"No common runtime error patterns detected.\",";
-            out << "\"solution\":\"Code appears safe based on basic analysis.\"";
+            out << "\"message\":\"No runtime, logical, syntax, or OOP issue detected by current analyzer.\",";
+            out << "\"solution\":\"Code appears safe based on current analysis.\"";
             out << "}";
         } else {
             for (int i = 0; i < reports.size(); i++) {
                 out << "{";
-                out << "\"line\":\"" << (reports[i].line == 0 ? "-" : to_string(reports[i].line)) << "\",";
+                out << "\"line\":\"" << reports[i].line << "\",";
                 out << "\"type\":\"" << reports[i].type << "\",";
                 out << "\"risk\":\"" << reports[i].risk << "\",";
                 out << "\"message\":\"" << reports[i].message << "\",";
                 out << "\"solution\":\"" << reports[i].solution << "\"";
                 out << "}";
 
-                if (i != reports.size() - 1)
+                if (i != reports.size() - 1) {
                     out << ",";
+                }
+
                 out << "\n";
             }
         }

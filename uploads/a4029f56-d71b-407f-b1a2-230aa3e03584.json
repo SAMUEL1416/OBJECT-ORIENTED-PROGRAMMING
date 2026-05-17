@@ -1,0 +1,7 @@
+{
+"score": 90,
+"total_errors": 1,
+"errors": [
+{"line":"20","type":"Array Out of Bounds","risk":"High","message":"Array index exceeds declared array size.","solution":"Use index within valid array range."}
+]
+}

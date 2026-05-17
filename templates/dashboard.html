@@ -7,37 +7,144 @@
 </head>
 <body>
 
-<div class="nav">
-    <span>Logged in as: {{ email }}</span>
-    <a href="/index">Analyze</a>
-    <a href="/history">History</a>
-    <a href="/logout">Logout</a>
-</div>
+<div class="layout">
 
-<div class="container">
-    <h1>Code Analysis Dashboard</h1>
+    <aside class="sidebar">
+        <h1>🛡 CodeGuard AI</h1>
+        <a href="/index">Analyze Code</a>
+        <a href="/history">History</a>
+        <a href="/logout">Logout</a>
 
-    <div class="score-card">
-        <h2>Runtime Safety Score: {{ result.score }}/100</h2>
-        <h3>Total Issues Found: {{ result.total_errors }}</h3>
-    </div>
+        <div class="sidebar-footer">
+            <b>Logged in as:</b>
+            <p>{{ email }}</p>
+        </div>
+    </aside>
 
-    <h2>Uploaded C++ Code</h2>
-    <pre>{{ code }}</pre>
+    <main class="main-content">
 
-    <h2>Analysis Result</h2>
+        <div class="topbar">
+            <h1>Code Analysis Dashboard</h1>
+            <span class="risk-badge risk-{{ data.overall_risk|lower }}">
+                {{ data.overall_risk }} Risk
+            </span>
+        </div>
 
-    {% for error in result.errors %}
-    <div class="error-card">
-        <h3>{{ error.type }}</h3>
-        <p><b>Line:</b> {{ error.line }}</p>
-        <p><b>Risk:</b> {{ error.risk }}</p>
-        <p><b>Issue:</b> {{ error.message }}</p>
-        <p><b>Solution:</b> {{ error.solution }}</p>
-    </div>
-    {% endfor %}
+        <p class="subtitle">
+            Complete runtime safety analysis, AI prediction, and learning guidance.
+        </p>
 
-    <a href="/index">Analyze Another Code</a>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Runtime Safety Score</h3>
+                <h2>{{ data.score }}/100</h2>
+                <p>{{ data.status_message }}</p>
+            </div>
+
+            <div class="stat-card">
+                <h3>Total Issues</h3>
+                <h2>{{ data.total_errors }}</h2>
+                <p>Detected from submitted C++ code</p>
+            </div>
+
+            <div class="stat-card danger">
+                <h3>High Risk</h3>
+                <h2>{{ data.high_count }}</h2>
+                <p>Needs immediate correction</p>
+            </div>
+
+            <div class="stat-card warning">
+                <h3>Medium Risk</h3>
+                <h2>{{ data.medium_count }}</h2>
+                <p>Should be improved</p>
+            </div>
+
+            <div class="stat-card info">
+                <h3>Low Risk</h3>
+                <h2>{{ data.low_count }}</h2>
+                <p>Minor improvement</p>
+            </div>
+
+            <div class="stat-card">
+                <h3>Crash Probability</h3>
+                <h2>{{ data.crash_probability }}%</h2>
+                <p>Estimated runtime failure chance</p>
+            </div>
+        </div>
+
+        <div class="two-column">
+            <section class="panel">
+                <h2>Uploaded C++ Code</h2>
+                <pre>{{ code }}</pre>
+            </section>
+
+            <section class="panel">
+                <h2>AI Runtime Prediction</h2>
+                <div class="probability-box probability-{{ data.overall_risk|lower }}">
+                    <div class="probability-number">{{ data.crash_probability }}%</div>
+                    <p>{{ data.status_message }}</p>
+                    <b>Recommendation:</b>
+                    <p>{{ data.recommendation }}</p>
+                </div>
+            </section>
+        </div>
+
+        <section class="panel">
+            <h2>Detected Issues and Recommended Solutions</h2>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Line</th>
+                            <th>Error Type</th>
+                            <th>Risk</th>
+                            <th>Issue Description</th>
+                            <th>Suggested Solution</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for error in result.errors %}
+                        <tr>
+                            <td>{{ error.line }}</td>
+                            <td>{{ error.type }}</td>
+                            <td>
+                                <span class="mini-risk mini-{{ error.risk|lower }}">
+                                    {{ error.risk }}
+                                </span>
+                            </td>
+                            <td>{{ error.message }}</td>
+                            <td>{{ error.solution }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="panel">
+            <h2>Learning Assistant</h2>
+
+            {% if data.learning_topics|length == 0 %}
+                <div class="success-box">
+                    Great work! No major learning gaps were detected.
+                </div>
+            {% else %}
+                <p>Based on your errors, revise these topics:</p>
+
+                <div class="feature-grid">
+                    {% for topic in data.learning_topics %}
+                    <div>📘 {{ topic }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </section>
+
+        <a class="main-button" href="/index">Analyze Another Code</a>
+
+    </main>
+
 </div>
 
 </body>

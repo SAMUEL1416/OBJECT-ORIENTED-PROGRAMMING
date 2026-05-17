@@ -7,30 +7,45 @@
 </head>
 <body>
 
-<div class="nav">
-    <span>Logged in as: {{ email }}</span>
-    <a href="/index">Analyze</a>
-    <a href="/logout">Logout</a>
-</div>
+<div class="layout">
 
-<div class="container">
-    <h1>Analysis History</h1>
+    <aside class="sidebar">
+        <h1>🛡 CodeGuard AI</h1>
+        <a href="/index">Analyze Code</a>
+        <a href="/history">History</a>
+        <a href="/logout">Logout</a>
 
-    {% if records|length == 0 %}
-    <p>No history found.</p>
-    {% endif %}
+        <div class="sidebar-footer">
+            <b>Logged in as:</b>
+            <p>{{ email }}</p>
+        </div>
+    </aside>
 
-    {% for record in records %}
-    <div class="history-card">
-        <h3>Analysis ID: {{ record[0] }}</h3>
-        <p><b>Date:</b> {{ record[4] }}</p>
-        <p><b>Runtime Safety Score:</b> {{ record[2] }}/100</p>
-        <p><b>Total Issues:</b> {{ record[3] }}</p>
+    <main class="main-content">
 
-        <h4>Code:</h4>
-        <pre>{{ record[1] }}</pre>
-    </div>
-    {% endfor %}
+        <h1>Analysis History</h1>
+        <p class="subtitle">Click any history card to view its full analysis result.</p>
+
+        {% if records|length == 0 %}
+        <div class="panel">
+            <p>No history found.</p>
+        </div>
+        {% endif %}
+
+        <div class="history-grid">
+            {% for record in records %}
+            <a class="history-card-new" href="/history/{{ record[0] }}">
+                <h2>Analysis ID: {{ record[0] }}</h2>
+                <p><b>Date:</b> {{ record[4] }}</p>
+                <p><b>Runtime Safety Score:</b> {{ record[2] }}/100</p>
+                <p><b>Total Issues:</b> {{ record[3] }}</p>
+                <span>View Full Analysis →</span>
+            </a>
+            {% endfor %}
+        </div>
+
+    </main>
+
 </div>
 
 </body>
